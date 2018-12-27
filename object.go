@@ -18,8 +18,8 @@ const (
 )
 
 type Prim struct {
-	method Method
 	name   string
+	method Method
 }
 
 type Object struct {
@@ -38,7 +38,7 @@ func prints(os []Object) {
 
 func (o *Object) print() {
 	switch o.objT {
-	case primitveT:
+	case primitveT, symbolT:
 		fmt.Printf("%s ", o.Symbol())
 	case closePT:
 		fmt.Print(") ")
@@ -60,6 +60,10 @@ func (o *Object) Type() varT {
 	return o.objT
 }
 
+func (o *Object) Append(newO Object) {
+	o.value = append(o.value.([]Object), newO)
+}
+
 func (o *Object) List() []Object {
 	return o.value.([]Object)
 }
@@ -77,11 +81,16 @@ func (o *Object) Num() float32 {
 }
 
 func (o *Object) Symbol() string {
-	return o.value.(Prim).name
+	if o.objT == primitveT {
+		return o.value.(Prim).name
+	} else if o.objT == symbolT {
+		return o.value.(string)
+	}
+	panic("no symbol found")
 }
 
-func (o *Object) Call(args []Object) Object {
-	return o.value.(Prim).method(args)
+func (o *Object) Call(args []Object, env *Env) Object {
+	return o.value.(Prim).method(args, env)
 }
 
 // Create Objects
@@ -95,4 +104,8 @@ func List(os []Object) Object {
 
 func Primitve(name string) Object {
 	return Object{objT: primitveT, value: Prim{method: Functs[name], name: name}}
+}
+
+func Symbol(name string) Object {
+	return Object{objT: symbolT, value: name}
 }

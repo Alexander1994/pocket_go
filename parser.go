@@ -15,7 +15,7 @@ func readExpr() (obj Object) {
 			continue
 		}
 		if unicode.IsLetter(c) || isStartOfFunc(c) {
-			return readPrimitive(c)
+			return readSymbolOrPrimitive(c)
 		}
 		if unicode.IsDigit(c) || (c == '-' && unicode.IsDigit(Peek())) {
 			return readNum(c)
@@ -38,12 +38,12 @@ func readNum(r rune) Object {
 	return Num(float32(f))
 }
 
-func readPrimitive(r rune) Object {
+func readSymbolOrPrimitive(r rune) Object {
 	atom := readAtom(r)
 	if _, ok := Functs[atom]; ok {
 		return Primitve(atom)
 	}
-	panic("invalid symbol")
+	return Symbol(atom)
 }
 
 func readList() Object {

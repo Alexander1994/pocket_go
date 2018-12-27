@@ -10,8 +10,8 @@ func main() {
 
 func Run(fname string) {
 	Load(fname)
-
 	var obj Object
+	env := createEnv()
 	for {
 		obj = readExpr()
 		if obj == nilObj {
@@ -20,7 +20,7 @@ func Run(fname string) {
 		if obj == closeParenObj {
 			panic("extra paren hanging out")
 		}
-		obj = Eval(obj)
+		obj = Eval(obj, env)
 		obj.print()
 		println()
 	}
