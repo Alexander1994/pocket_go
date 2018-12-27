@@ -1,7 +1,15 @@
 (def pi 3.14)
 
+(defn x4 (x) (* x 4))
+
+(defn square (x) (* x x))
+
+(defn area_of_circle (x) (* pi (square x)))
+
+(area_of_circle 2)
+
 (/ 
-    (* pi 4) 
+    (x4 pi)
     2
 )
 

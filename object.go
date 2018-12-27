@@ -13,13 +13,13 @@ const (
 	symbolT
 	primitveT
 
+	funcT
 	macroT
-	envT
 )
 
 type Prim struct {
 	name   string
-	method Method
+	method PrimFunc
 }
 
 type Object struct {
@@ -27,8 +27,15 @@ type Object struct {
 	value interface{}
 }
 
+type Func struct {
+	name string    // $symbol
+	args *Object   // ($symbol...)
+	expr *[]Object // $expr...
+}
+
 var nilObj = Object{objT: nilT}
 var closeParenObj = Object{objT: closePT}
+var trueObj = Object{objT: trueT}
 
 func prints(os []Object) {
 	for _, op := range os {
@@ -89,7 +96,11 @@ func (o *Object) Symbol() string {
 	panic("no symbol found")
 }
 
-func (o *Object) Call(args []Object, env *Env) Object {
+func (o *Object) Function() Func {
+	return o.value.(Func)
+}
+
+func (o *Object) CallPrim(args []Object, env *Env) Object {
 	return o.value.(Prim).method(args, env)
 }
 
@@ -108,4 +119,8 @@ func Primitve(name string) Object {
 
 func Symbol(name string) Object {
 	return Object{objT: symbolT, value: name}
+}
+
+func Function(name string, args *Object, expr *[]Object) Object {
+	return Object{objT: funcT, value: Func{name: name, args: args, expr: expr}}
 }

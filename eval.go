@@ -2,7 +2,7 @@ package main
 
 func Eval(o Object, env *Env) Object {
 	switch o.objT {
-	case numT, primitveT, nilT:
+	case numT, primitveT, nilT, funcT:
 		return o
 	case symbolT:
 		obj := env.find(o.Symbol())
@@ -13,16 +13,15 @@ func Eval(o Object, env *Env) Object {
 	case cellT:
 		function := Eval(o.Car(), env)
 		args := o.Cdr()
-		if function.Type() != primitveT {
-			panic("Head of cell/list is not a function")
+		if function.Type() != primitveT && function.Type() != funcT {
+			panic("Head of cell/list is not a function: ")
 		}
 		return call(function, args, env)
 	}
-	o.print()
 	return nilObj
 }
 
-func Eval_List(list []Object, env *Env) []Object {
+func EvalList(list []Object, env *Env) []Object {
 	evalList := make([]Object, len(list))
 	for i, item := range list {
 		evalList[i] = Eval(item, env)
@@ -32,7 +31,10 @@ func Eval_List(list []Object, env *Env) []Object {
 
 func call(function Object, args []Object, env *Env) Object {
 	if function.Type() == primitveT {
-		return function.Call(args, env)
+		return function.CallPrim(args, env)
+	}
+	if function.Type() == funcT {
+		return function.CallFunc(args, env)
 	}
 	panic("invalid call to func")
 }

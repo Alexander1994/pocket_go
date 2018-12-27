@@ -31,7 +31,11 @@ func (e *Env) Add(symbol string, obj *Object) {
 }
 
 func AddAndGetNewEnv(e *Env) (eNew *Env) {
-	eNew = new(Env)
+	eNew = createEnv()
 	(*eNew).upperEnv = e
 	return eNew
+}
+
+func (e *Env) popEnvStack() {
+	e = e.upperEnv
 }

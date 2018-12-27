@@ -3,7 +3,7 @@
 ## A little lisp written in Golang you could fit in your pocket
 
 ### Current Features
-- recursive parser & interpreter (because I wanted my call stacks to be a thesis!)
+- recursive parser & interpreter (because I wanted my call stacks to be bigger than the code I wrote!)
 - numbers, arithmetic primitve functions...
 
 
