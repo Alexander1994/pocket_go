@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 type PrimFunc = func(args []Object, env *Env) Object
 
 var Functs = map[string]PrimFunc{
@@ -10,6 +12,8 @@ var Functs = map[string]PrimFunc{
 	"println": printLn,
 	"def":     def,
 	"defn":    defn,
+	"go":      goRoutine,
+	"sleep":   sleep,
 }
 
 func isStartOfFunc(r rune) bool {
@@ -64,6 +68,21 @@ func printLn(args []Object, env *Env) Object {
 	return nilObj
 }
 
+// (sleep $num)
+func sleep(args []Object, env *Env) Object {
+
+	if len(args) != 1 {
+		panic("sleep gets 1 arg which is a num")
+	}
+	num := Eval(args[0], env)
+	if num.Type() != numT {
+		panic("sleep gets 1 arg which is a num")
+	}
+	length := time.Duration(num.Num()) * time.Millisecond
+	time.Sleep(length)
+	return nilObj
+}
+
 // (def $symbol $expr)
 func def(args []Object, env *Env) Object {
 	if len(args) != 2 {
@@ -86,21 +105,23 @@ func defn(args []Object, env *Env) Object {
 	return nilObj
 }
 
+// (go $symbol $expr...)
+func goRoutine(args []Object, env *Env) Object {
+	if len(args) < 2 {
+		panic("go primitive requires a function and its args")
+	}
+	function := Eval(args[0], env)
+	if function.Type() != funcT {
+		panic("go primitive requires a function and its args")
+	}
+	go function.CallFunc(args[1:], env)
+	return nilObj
+}
+
 // ($symbol $expr...)
 func (o *Object) CallFunc(args []Object, env *Env) (returnVal Object) {
-	funDef := o.Function()
-	defArgs := funDef.args.List()
-	if len(defArgs) != len(args) {
-		panic("args in call to function != function args")
-	}
-	evalArgs := EvalList(args, env)
-	newEnv := AddAndGetNewEnv(env)
-
-	for i, arg := range evalArgs {
-		newEnv.Add(defArgs[i].Symbol(), &arg)
-	}
-	exprList := *funDef.expr
-	resultList := EvalList(exprList, newEnv)
-	env.popEnvStack()
+	newEnv := o.pushFuncEnv(args, env)
+	resultList := EvalList((*o.Function().expr), newEnv)
+	env.popFuncEnv()
 	return resultList[len(resultList)-1]
 }

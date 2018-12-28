@@ -8,6 +8,12 @@
 
 (area_of_circle 2)
 
+(defn p2 (x) (println (square x)))
+
+(go p2 3)
+
+(sleep 1000)
+
 (/ 
     (x4 pi)
     2

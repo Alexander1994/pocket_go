@@ -36,6 +36,21 @@ func AddAndGetNewEnv(e *Env) (eNew *Env) {
 	return eNew
 }
 
-func (e *Env) popEnvStack() {
+func (e *Env) popFuncEnv() {
 	e = e.upperEnv
+}
+
+func (o *Object) pushFuncEnv(args []Object, env *Env) (newEnv *Env) {
+	funcDef := o.Function()
+	defArgs := funcDef.args.List()
+	if len(defArgs) != len(args) {
+		panic("args in call to function != function args")
+	}
+	evalArgs := EvalList(args, env)
+	newEnv = AddAndGetNewEnv(env)
+
+	for i, arg := range evalArgs {
+		newEnv.Add(defArgs[i].Symbol(), &arg)
+	}
+	return newEnv
 }
