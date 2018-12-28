@@ -1,15 +1,15 @@
 package main
 
-func Eval(o Object, env *Env) Object {
+func Eval(o *Object, env *Env) *Object {
 	switch o.objT {
 	case numT, primitveT, nilT, funcT:
 		return o
 	case symbolT:
 		obj := env.find(o.Symbol())
-		if obj == &nilObj {
+		if obj == nilObj {
 			panic("undefined symbol " + o.Symbol())
 		}
-		return *obj
+		return obj
 	case cellT:
 		function := Eval(o.Car(), env)
 		args := o.Cdr()
@@ -21,15 +21,16 @@ func Eval(o Object, env *Env) Object {
 	return nilObj
 }
 
-func EvalList(list []Object, env *Env) []Object {
-	evalList := make([]Object, len(list))
-	for i, item := range list {
-		evalList[i] = Eval(item, env)
+func EvalList(list *[]Object, env *Env) *[]Object {
+	evalList := make([]Object, len(*list))
+	for i, item := range *list {
+		obj := Eval(&item, env)
+		evalList[i] = *obj
 	}
-	return evalList
+	return &evalList
 }
 
-func call(function Object, args []Object, env *Env) Object {
+func call(function *Object, args *[]Object, env *Env) *Object {
 	if function.Type() == primitveT {
 		return function.CallPrim(args, env)
 	}

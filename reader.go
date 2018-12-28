@@ -22,7 +22,7 @@ func Peek() rune {
 	if i < size { // i is always pointing at the next rune
 		return buffer[i]
 	}
-	panic("sudden end of file???? while peeking :0")
+	panic("sudden end of file. while peeking")
 }
 
 func SubBuffer(start, end int) string {

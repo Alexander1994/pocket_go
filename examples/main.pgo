@@ -12,7 +12,9 @@
 
 (go p2 3)
 
-(sleep 1000)
+(defn seconds (t) (* t 1000))
+
+(sleep (seconds 1))
 
 (/ 
     (x4 pi)

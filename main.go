@@ -1,16 +1,19 @@
 package main
 
+import "os"
+
 func main() {
-	// if len(os.Args) != 1 {
-	// 	print("enter file name")
-	// }
-	fname := /*os.Args[1]*/ "main" + ".pgo"
+	if len(os.Args) < 2 {
+		println("enter file name")
+		return
+	}
+	fname := os.Args[1]
 	Run(fname)
 }
 
 func Run(fname string) {
 	Load(fname)
-	var obj Object
+	var obj *Object
 	env := createEnv()
 	for {
 		obj = readExpr()

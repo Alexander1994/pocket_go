@@ -20,7 +20,7 @@ func (env *Env) find(symbol string) (obj *Object) {
 			return obj
 		}
 		if it.upperEnv == nil {
-			return &nilObj
+			return nilObj
 		}
 		it = it.upperEnv
 	}
@@ -40,16 +40,16 @@ func (e *Env) popFuncEnv() {
 	e = e.upperEnv
 }
 
-func (o *Object) pushFuncEnv(args []Object, env *Env) (newEnv *Env) {
+func (o *Object) pushFuncEnv(args *[]Object, env *Env) (newEnv *Env) {
 	funcDef := o.Function()
-	defArgs := funcDef.args.List()
-	if len(defArgs) != len(args) {
+	defArgs := *funcDef.args.List()
+	if len(defArgs) != len(*args) {
 		panic("args in call to function != function args")
 	}
 	evalArgs := EvalList(args, env)
 	newEnv = AddAndGetNewEnv(env)
 
-	for i, arg := range evalArgs {
+	for i, arg := range *evalArgs {
 		newEnv.Add(defArgs[i].Symbol(), &arg)
 	}
 	return newEnv

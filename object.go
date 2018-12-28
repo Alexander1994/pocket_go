@@ -12,8 +12,8 @@ const (
 	cellT
 	symbolT
 	primitveT
-
 	funcT
+	// not in use
 	macroT
 )
 
@@ -33,9 +33,9 @@ type Func struct {
 	expr *[]Object // $expr...
 }
 
-var nilObj = Object{objT: nilT}
-var closeParenObj = Object{objT: closePT}
-var trueObj = Object{objT: trueT}
+var nilObj = &Object{objT: nilT}
+var closeParenObj = &Object{objT: closePT}
+var trueObj = &Object{objT: trueT}
 
 func prints(os []Object) {
 	for _, op := range os {
@@ -55,7 +55,7 @@ func (o *Object) print() {
 		fmt.Printf("%.2f ", o.Num())
 	case cellT:
 		fmt.Print("\n")
-		for _, no := range o.List() {
+		for _, no := range *o.List() {
 			no.print()
 		}
 	default:
@@ -67,20 +67,26 @@ func (o *Object) Type() varT {
 	return o.objT
 }
 
-func (o *Object) Append(newO Object) {
-	o.value = append(o.value.([]Object), newO)
+func (o *Object) List() *[]Object {
+	return o.value.(*[]Object)
 }
 
-func (o *Object) List() []Object {
-	return o.value.([]Object)
+func (o *Object) Car() *Object {
+	return &(*o.List())[0]
 }
 
-func (o *Object) Car() Object {
-	return o.List()[0]
+func (o *Object) Cdr() *[]Object {
+	cdr := ((*o.List())[1:])
+	return &cdr
 }
 
-func (o *Object) Cdr() []Object {
-	return o.value.([]Object)[1:]
+func Cdr(os *[]Object) *[]Object {
+	cdr := (*os)[1:]
+	return &cdr
+}
+
+func Car(os *[]Object) *Object {
+	return &(*os)[0]
 }
 
 func (o *Object) Num() float32 {
@@ -96,31 +102,31 @@ func (o *Object) Symbol() string {
 	panic("no symbol found")
 }
 
-func (o *Object) Function() Func {
-	return o.value.(Func)
+func (o *Object) Function() *Func {
+	return o.value.(*Func)
 }
 
-func (o *Object) CallPrim(args []Object, env *Env) Object {
-	return o.value.(Prim).method(args, env)
+func (o *Object) CallPrim(args *[]Object, env *Env) *Object {
+	return o.value.(*Prim).method(args, env)
 }
 
 // Create Objects
-func Num(n float32) Object {
-	return Object{objT: numT, value: n}
+func Num(n float32) *Object {
+	return &Object{objT: numT, value: n}
 }
 
-func List(os []Object) Object {
-	return Object{objT: cellT, value: os}
+func List(os *[]Object) *Object {
+	return &Object{objT: cellT, value: os}
 }
 
-func Primitve(name string) Object {
-	return Object{objT: primitveT, value: Prim{method: Functs[name], name: name}}
+func Primitve(name string) *Object {
+	return &Object{objT: primitveT, value: &Prim{method: Functs[name], name: name}}
 }
 
-func Symbol(name string) Object {
-	return Object{objT: symbolT, value: name}
+func Symbol(name string) *Object {
+	return &Object{objT: symbolT, value: name}
 }
 
-func Function(name string, args *Object, expr *[]Object) Object {
-	return Object{objT: funcT, value: Func{name: name, args: args, expr: expr}}
+func Function(name string, args *Object, expr *[]Object) *Object {
+	return &Object{objT: funcT, value: &Func{name: name, args: args, expr: expr}}
 }

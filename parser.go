@@ -5,7 +5,7 @@ import (
 	"unicode"
 )
 
-func readExpr() (obj Object) {
+func readExpr() (obj *Object) {
 	for {
 		c, isEOF := NextRune()
 		if isEOF {
@@ -29,7 +29,7 @@ func readExpr() (obj Object) {
 	}
 }
 
-func readNum(r rune) Object {
+func readNum(r rune) *Object {
 	atom := readAtom(r)
 	f, err := strconv.ParseFloat(atom, 32)
 	if err != nil {
@@ -38,7 +38,7 @@ func readNum(r rune) Object {
 	return Num(float32(f))
 }
 
-func readSymbolOrPrimitive(r rune) Object {
+func readSymbolOrPrimitive(r rune) *Object {
 	atom := readAtom(r)
 	if _, ok := Functs[atom]; ok {
 		return Primitve(atom)
@@ -46,14 +46,14 @@ func readSymbolOrPrimitive(r rune) Object {
 	return Symbol(atom)
 }
 
-func readList() Object {
+func readList() *Object {
 	evalList := make([]Object, 0)
 	for {
 		obj := readExpr()
 		if obj == closeParenObj {
-			return List(evalList)
+			return List(&evalList)
 		}
-		evalList = append(evalList, obj)
+		evalList = append(evalList, *obj)
 	}
 }
 
