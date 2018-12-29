@@ -1,0 +1,12 @@
+
+(def channel chan)
+
+(defn pow (x ch)
+    (<- ch (* x x) )
+)
+
+(go pow 2 channel)
+
+(def z (<- channel))
+
+(println z)

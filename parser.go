@@ -15,7 +15,7 @@ func readExpr() (obj *Object) {
 			continue
 		}
 		if unicode.IsLetter(c) || isStartOfFunc(c) {
-			return readSymbolOrPrimitive(c)
+			return readPhrase(c)
 		}
 		if unicode.IsDigit(c) || (c == '-' && unicode.IsDigit(Peek())) {
 			return readNum(c)
@@ -38,8 +38,11 @@ func readNum(r rune) *Object {
 	return Num(float32(f))
 }
 
-func readSymbolOrPrimitive(r rune) *Object {
+func readPhrase(r rune) *Object {
 	atom := readAtom(r)
+	if atom == "chan" {
+		return Channel()
+	}
 	if _, ok := Functs[atom]; ok {
 		return Primitve(atom)
 	}
@@ -47,13 +50,13 @@ func readSymbolOrPrimitive(r rune) *Object {
 }
 
 func readList() *Object {
-	evalList := make([]Object, 0)
+	evalList := make([]*Object, 0)
 	for {
 		obj := readExpr()
 		if obj == closeParenObj {
-			return List(&evalList)
+			return List(evalList)
 		}
-		evalList = append(evalList, *obj)
+		evalList = append(evalList, obj)
 	}
 }
 

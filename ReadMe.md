@@ -9,7 +9,7 @@
 
 ### Road Map
 - Go routines (DONE)
-- Channels
+- Channels    (DONE)
 
 ### Obligatory Lisp Related Jokes and Puns
 He's making a lisp,

@@ -2,7 +2,7 @@ package main
 
 func Eval(o *Object, env *Env) *Object {
 	switch o.objT {
-	case numT, primitveT, nilT, funcT:
+	case numT, primitveT, nilT, funcT, chanT:
 		return o
 	case symbolT:
 		obj := env.find(o.Symbol())
@@ -21,16 +21,16 @@ func Eval(o *Object, env *Env) *Object {
 	return nilObj
 }
 
-func EvalList(list *[]Object, env *Env) *[]Object {
-	evalList := make([]Object, len(*list))
-	for i, item := range *list {
-		obj := Eval(&item, env)
-		evalList[i] = *obj
+func EvalList(list []*Object, env *Env) []*Object {
+	evalList := make([]*Object, len(list))
+	for i, item := range list {
+		obj := Eval(item, env)
+		evalList[i] = obj
 	}
-	return &evalList
+	return evalList
 }
 
-func call(function *Object, args *[]Object, env *Env) *Object {
+func call(function *Object, args []*Object, env *Env) *Object {
 	if function.Type() == primitveT {
 		return function.CallPrim(args, env)
 	}

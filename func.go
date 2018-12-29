@@ -2,7 +2,7 @@ package main
 
 import "time"
 
-type PrimFunc = func(args *[]Object, env *Env) *Object
+type PrimFunc = func(args []*Object, env *Env) *Object
 
 var Functs = map[string]PrimFunc{
 	"+":       add,
@@ -13,6 +13,7 @@ var Functs = map[string]PrimFunc{
 	"def":     def,
 	"defn":    defn,
 	"go":      goRoutine,
+	"<-":      channelOp,
 	"sleep":   sleep,
 }
 
@@ -25,42 +26,42 @@ func isStartOfFunc(r rune) bool {
 	return false
 }
 
-func add(args *[]Object, env *Env) *Object {
+func add(args []*Object, env *Env) *Object {
 	args = EvalList(args, env)
 	sum := float32(0)
-	for _, arg := range *args {
+	for _, arg := range args {
 		sum = sum + arg.Num()
 	}
 	return Num(sum)
 }
-func minus(args *[]Object, env *Env) *Object {
+func minus(args []*Object, env *Env) *Object {
 	args = EvalList(args, env)
 	diff := Car(args).Num()
 
-	for _, arg := range *Cdr(args) {
+	for _, arg := range Cdr(args) {
 		diff = diff - arg.Num()
 	}
 	return Num(diff)
 }
-func divide(args *[]Object, env *Env) *Object {
+func divide(args []*Object, env *Env) *Object {
 	args = EvalList(args, env)
 	num := Car(args).Num()
-	for _, arg := range *Cdr(args) {
+	for _, arg := range Cdr(args) {
 		num = num / arg.Num()
 	}
 	return Num(num)
 }
-func multi(args *[]Object, env *Env) *Object {
+func multi(args []*Object, env *Env) *Object {
 	args = EvalList(args, env)
 	sum := Car(args).Num()
-	for _, arg := range *Cdr(args) {
+	for _, arg := range Cdr(args) {
 		sum = sum * arg.Num()
 	}
 	return Num(sum)
 }
-func printLn(args *[]Object, env *Env) *Object {
+func printLn(args []*Object, env *Env) *Object {
 	args = EvalList(args, env)
-	for _, arg := range *args {
+	for _, arg := range args {
 		arg.print()
 		print(" ")
 	}
@@ -69,8 +70,8 @@ func printLn(args *[]Object, env *Env) *Object {
 }
 
 // (sleep $num)
-func sleep(args *[]Object, env *Env) *Object {
-	if len(*args) != 1 {
+func sleep(args []*Object, env *Env) *Object {
+	if len(args) != 1 {
 		panic("sleep gets 1 arg which is a num")
 	}
 	num := Eval(Car(args), env)
@@ -83,32 +84,41 @@ func sleep(args *[]Object, env *Env) *Object {
 }
 
 // (def $symbol $expr)
-func def(args *[]Object, env *Env) *Object {
-	if len((*args)) != 2 {
+func def(args []*Object, env *Env) *Object {
+	if len(args) != 2 {
 		panic("invalid args length passed to def")
 	}
-	expr := Eval(&(*args)[1], env)
-	env.Add((*args)[0].Symbol(), expr)
+	expr := Eval(args[1], env)
+	env.Add(args[0].Symbol(), expr)
 	return nilObj
 }
 
 // (defn $symbol ($symbol...) $expr...)
-func defn(args *[]Object, env *Env) *Object {
-	if len((*args)) < 3 {
+func defn(args []*Object, env *Env) *Object {
+	if len(args) < 3 {
 		panic("defn must have atleast 3 args: defn $symbol ($symbol...) $expr...")
 	}
-	expr := (*args)[2:]
-	symbol := (*args)[0].Symbol()
-	env.Add(symbol, Function(symbol, &(*args)[1], &expr))
+	expr := args[2:]
+	symbol := Car(args).Symbol()
+	env.Add(symbol, Function(symbol, args[1], expr))
 	return nilObj
 }
 
+// ($symbol $expr...)
+func (o *Object) CallFunc(args []*Object, env *Env) (returnVal *Object) {
+
+	newEnv := o.pushFuncEnv(args, env)
+	resultList := EvalList(o.Function().expr, newEnv)
+	env.popFuncEnv()
+	return resultList[len(resultList)-1]
+}
+
 // (go $symbol $expr...)
-func goRoutine(args *[]Object, env *Env) *Object {
-	if len((*args)) < 2 {
+func goRoutine(args []*Object, env *Env) *Object {
+	if len(args) < 2 {
 		panic("go primitive requires a function and its args")
 	}
-	function := Eval(&(*args)[0], env)
+	function := Eval(args[0], env)
 	if function.Type() != funcT {
 		panic("go primitive requires a function and its args")
 	}
@@ -116,10 +126,14 @@ func goRoutine(args *[]Object, env *Env) *Object {
 	return nilObj
 }
 
-// ($symbol $expr...)
-func (o *Object) CallFunc(args *[]Object, env *Env) (returnVal *Object) {
-	newEnv := o.pushFuncEnv(args, env)
-	resultList := *EvalList(o.Function().expr, newEnv)
-	env.popFuncEnv()
-	return &resultList[len(resultList)-1]
+// send: (<- $channel $expr) OR recv: (<- $channel)
+func channelOp(args []*Object, env *Env) *Object {
+	if len(args) == 2 { // send
+		Eval(Car(args), env).Send(Eval(args[1], env))
+		return nilObj
+	} else if len(args) == 1 { // recv
+		return Eval(Car(args), env).Recv()
+	} else {
+		panic("invalid call to channel op")
+	}
 }

@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 type varT int
 
@@ -13,6 +16,7 @@ const (
 	symbolT
 	primitveT
 	funcT
+	chanT
 	// not in use
 	macroT
 )
@@ -30,7 +34,7 @@ type Object struct {
 type Func struct {
 	name string    // $symbol
 	args *Object   // ($symbol...)
-	expr *[]Object // $expr...
+	expr []*Object // $expr...
 }
 
 var nilObj = &Object{objT: nilT}
@@ -45,7 +49,7 @@ func prints(os []Object) {
 
 func (o *Object) print() {
 	switch o.objT {
-	case primitveT, symbolT:
+	case primitveT, symbolT, funcT:
 		fmt.Printf("%s ", o.Symbol())
 	case closePT:
 		fmt.Print(") ")
@@ -53,13 +57,15 @@ func (o *Object) print() {
 		fmt.Printf("nil ")
 	case numT:
 		fmt.Printf("%.2f ", o.Num())
+	case chanT:
+		fmt.Printf("chan ")
 	case cellT:
 		fmt.Print("\n")
-		for _, no := range *o.List() {
+		for _, no := range o.List() {
 			no.print()
 		}
 	default:
-		panic("invalid type found: " + string(o.objT))
+		panic("invalid type found: " + o.TypeStr())
 	}
 }
 
@@ -67,26 +73,28 @@ func (o *Object) Type() varT {
 	return o.objT
 }
 
-func (o *Object) List() *[]Object {
-	return o.value.(*[]Object)
+func (o *Object) TypeStr() string {
+	return strconv.Itoa(int(o.Type()))
+}
+
+func (o *Object) List() []*Object {
+	return o.value.([]*Object)
 }
 
 func (o *Object) Car() *Object {
-	return &(*o.List())[0]
+	return o.List()[0]
 }
 
-func (o *Object) Cdr() *[]Object {
-	cdr := ((*o.List())[1:])
-	return &cdr
+func (o *Object) Cdr() []*Object {
+	return o.List()[1:]
 }
 
-func Cdr(os *[]Object) *[]Object {
-	cdr := (*os)[1:]
-	return &cdr
+func Cdr(os []*Object) []*Object {
+	return os[1:]
 }
 
-func Car(os *[]Object) *Object {
-	return &(*os)[0]
+func Car(os []*Object) *Object {
+	return (os)[0]
 }
 
 func (o *Object) Num() float32 {
@@ -95,9 +103,11 @@ func (o *Object) Num() float32 {
 
 func (o *Object) Symbol() string {
 	if o.objT == primitveT {
-		return o.value.(Prim).name
+		return o.value.(*Prim).name
 	} else if o.objT == symbolT {
 		return o.value.(string)
+	} else if o.Type() == funcT {
+		return o.value.(*Func).name
 	}
 	panic("no symbol found")
 }
@@ -106,8 +116,17 @@ func (o *Object) Function() *Func {
 	return o.value.(*Func)
 }
 
-func (o *Object) CallPrim(args *[]Object, env *Env) *Object {
+func (o *Object) CallPrim(args []*Object, env *Env) *Object {
 	return o.value.(*Prim).method(args, env)
+}
+
+func (o *Object) Send(s *Object) {
+	(*o.value.(*chan *Object)) <- s
+}
+
+func (o *Object) Recv() (recv *Object) {
+	recv = <-(*o.value.(*chan *Object))
+	return recv
 }
 
 // Create Objects
@@ -115,7 +134,7 @@ func Num(n float32) *Object {
 	return &Object{objT: numT, value: n}
 }
 
-func List(os *[]Object) *Object {
+func List(os []*Object) *Object {
 	return &Object{objT: cellT, value: os}
 }
 
@@ -127,6 +146,11 @@ func Symbol(name string) *Object {
 	return &Object{objT: symbolT, value: name}
 }
 
-func Function(name string, args *Object, expr *[]Object) *Object {
+func Function(name string, args *Object, expr []*Object) *Object {
 	return &Object{objT: funcT, value: &Func{name: name, args: args, expr: expr}}
+}
+
+func Channel() *Object {
+	ch := make(chan *Object)
+	return &Object{objT: chanT, value: &ch}
 }
