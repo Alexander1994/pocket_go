@@ -14,6 +14,10 @@ func readExpr() (obj *Object) {
 		if unicode.IsSpace(c) {
 			continue
 		}
+		if c == ';' && Peek() == ';' {
+			for ; c != '\n' && !isEOF; c, isEOF = NextRune() {
+			}
+		}
 		if unicode.IsLetter(c) || isStartOfFunc(c) {
 			return readPhrase(c)
 		}

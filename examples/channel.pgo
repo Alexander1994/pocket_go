@@ -1,12 +1,15 @@
 
 (def channel chan)
 
+;; comments are cool
+
 (defn pow (x ch)
     (<- ch (* x x) )
 )
 
-(go pow 2 channel)
+(go pow 2 channel) ;; (comments)
 
 (def z (<- channel))
 
 (println z)
+;; comment
