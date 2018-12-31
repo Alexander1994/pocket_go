@@ -24,16 +24,16 @@ func createEnv() (e *Env) {
 	return &Env{vars: make(map[string]*Object), upperEnv: nil}
 }
 
-func (env *Env) find(symbol string) (obj *Object) {
+func (env *Env) find(symbol string) (obj *Object, objEnv *Env) {
 	var found bool
 	it := env
 	for {
 		obj, found = it.vars[symbol]
 		if found {
-			return obj
+			return obj, it
 		}
 		if it.upperEnv == nil {
-			return nilObj
+			return nilObj, nil
 		}
 		it = it.upperEnv
 	}
@@ -41,6 +41,15 @@ func (env *Env) find(symbol string) (obj *Object) {
 
 func (e *Env) Add(symbol string, obj *Object) {
 	e.vars[symbol] = obj
+}
+
+func (e *Env) Set(symbol string, obj *Object) {
+	currObj, env := e.find(symbol)
+	if currObj != nilObj {
+		env.Add(symbol, obj)
+		return
+	}
+	panic("call to set of non existant var")
 }
 
 func AddAndGetNewEnv(e *Env) (eNew *Env) {
@@ -53,6 +62,10 @@ func (e *Env) popFuncEnv() {
 	e = e.upperEnv
 }
 
+func (e *Env) isTempEnv() bool {
+	return e.upperEnv != nil // && e.upperEnv.upperEnv != nil
+}
+
 func (o *Object) pushFuncEnv(args []*Object, env *Env) (newEnv *Env) {
 	funcDef := o.Function()
 	defArgs := funcDef.args.List()
@@ -61,8 +74,7 @@ func (o *Object) pushFuncEnv(args []*Object, env *Env) (newEnv *Env) {
 	}
 	evalArgs := EvalList(args, env)
 	newEnv = AddAndGetNewEnv(env)
-	// (defn double (x ch)
-	// (<- ch (* 2 x) )
+
 	for i, arg := range evalArgs {
 		name := defArgs[i].Symbol()
 		newEnv.Add(name, arg)

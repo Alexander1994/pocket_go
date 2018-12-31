@@ -15,6 +15,7 @@ var Functs = map[string]PrimFunc{
 	"go":      goRoutine,
 	"<-":      channelOp,
 	"sleep":   sleep,
+	"set":     set,
 }
 
 func isStartOfFunc(r rune) bool {
@@ -88,34 +89,54 @@ func def(args []*Object, env *Env) *Object {
 	if len(args) != 2 {
 		panic("invalid args length passed to def")
 	}
-	expr := Eval(args[1], env)
-	env.Add(args[0].Symbol(), expr)
+	expr := args[1]
+	expr = Eval(expr, env)
+	env.Add(Car(args).Symbol(), expr)
 	return nilObj
 }
 
-// (defn $symbol ($symbol...) $expr...)
-func defn(args []*Object, env *Env) *Object {
-	if len(args) < 3 {
-		panic("defn must have atleast 3 args: defn $symbol ($symbol...) $expr...")
+// (set $symbol $expr)
+func set(args []*Object, env *Env) *Object {
+	if len(args) != 2 {
+		panic("invalid arg count in pass to set")
 	}
-	expr := args[2:]
-	symbol := Car(args).Symbol()
-	env.Add(symbol, Function(symbol, args[1], expr))
+	expr := Eval(args[1], env)
+	env.Set(Car(args).Symbol(), expr)
 	return nilObj
 }
 
-// ($symbol $expr...)
-func (o *Object) CallFunc(args []*Object, env *Env) (returnVal *Object) {
+// (defn ?$symbol ($symbol...) $expr...)
+func defn(args []*Object, env *Env) *Object {
+	if len(args) == 1 {
+		panic("defn must have atleast 2 or more args: (defn ?$symbol ($symbol...) $expr...)")
+	}
+	var closure *Env
+	if env.isTempEnv() {
+		closure = env
+	}
+	if len(args) == 2 {
+		return Function(Car(args), closure, Cdr(args))
+	}
+	env.Add(Car(args).Symbol(), Function(args[1], closure, args[2:]))
+	return nilObj
+}
 
-	newEnv := o.pushFuncEnv(args, env)
-	resultList := EvalList(o.Function().expr, newEnv)
-	env.popFuncEnv()
+// ($symbol ?$expr...)
+func (o *Object) CallFunc(args []*Object, env *Env) (returnVal *Object) {
+	function := o.Function()
+	currEnv := env
+	if function.closure != nil {
+		currEnv = function.closure
+	}
+	newEnv := o.pushFuncEnv(args, currEnv)
+	resultList := EvalList(function.expr, newEnv)
+	currEnv.popFuncEnv()
 	return resultList[len(resultList)-1]
 }
 
-// (go $symbol $expr...)
+// (go $symbol ?$expr...)
 func goRoutine(args []*Object, env *Env) *Object {
-	if len(args) < 2 {
+	if len(args) < 1 {
 		panic("go primitive requires a function and its args")
 	}
 	function := Eval(args[0], env)

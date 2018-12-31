@@ -32,9 +32,9 @@ type Object struct {
 }
 
 type Func struct {
-	name string    // $symbol
-	args *Object   // ($symbol...)
-	expr []*Object // $expr...
+	args    *Object // ($symbol...)
+	closure *Env
+	expr    []*Object // $expr...
 }
 
 var nilObj = &Object{objT: nilT}
@@ -49,8 +49,10 @@ func prints(os []Object) {
 
 func (o *Object) print() {
 	switch o.objT {
-	case primitveT, symbolT, funcT:
+	case primitveT, symbolT:
 		fmt.Printf("%s ", o.Symbol())
+	case funcT:
+		o.value.(*Func).args.print()
 	case closePT:
 		fmt.Print(") ")
 	case nilT:
@@ -94,7 +96,7 @@ func Cdr(os []*Object) []*Object {
 }
 
 func Car(os []*Object) *Object {
-	return (os)[0]
+	return os[0]
 }
 
 func (o *Object) Num() float32 {
@@ -106,8 +108,6 @@ func (o *Object) Symbol() string {
 		return o.value.(*Prim).name
 	} else if o.objT == symbolT {
 		return o.value.(string)
-	} else if o.Type() == funcT {
-		return o.value.(*Func).name
 	}
 	panic("no symbol found")
 }
@@ -146,8 +146,8 @@ func Symbol(name string) *Object {
 	return &Object{objT: symbolT, value: name}
 }
 
-func Function(name string, args *Object, expr []*Object) *Object {
-	return &Object{objT: funcT, value: &Func{name: name, args: args, expr: expr}}
+func Function(args *Object, closure *Env, expr []*Object) *Object {
+	return &Object{objT: funcT, value: &Func{args: args, closure: closure, expr: expr}}
 }
 
 func Channel() *Object {

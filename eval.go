@@ -5,7 +5,7 @@ func Eval(o *Object, env *Env) *Object {
 	case numT, primitveT, nilT, funcT, chanT:
 		return o
 	case symbolT:
-		obj := env.find(o.Symbol())
+		obj, _ := env.find(o.Symbol())
 		if obj == nilObj {
 			panic("undefined symbol " + o.Symbol())
 		}

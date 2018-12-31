@@ -1,0 +1,48 @@
+;; a tour of all functions in pocket go
+
+(def x 1) ;; var definition
+
+(+ 1 1) ;; arithmetic so far +, *, /, -
+
+(defn x2 (x) (* x 2)) ;; functions, *note temporary scope defined in functions
+
+(x2 4) ;; call to functions
+
+(def answer_to_life 
+    (defn ()           ;; anon functions
+        42
+    )) 
+
+(answer_to_life)
+
+(defn higher_fun (x) ;; higher order functions, with js like closures
+    (defn (y) (* x y))
+)
+
+((higher_fun 3) 3)
+
+(set x 3) ;; set the var x to 3
+
+(println x) ;; prints 3
+
+;; goroutines!
+(defn two () 
+    (println 2)
+)
+
+(go two)
+(sleep 750) ;; sleeps for 100ms
+
+;; channels
+
+(def channel chan)
+(defn pow (x ch)
+    (<- ch (* x x) )
+)
+
+(go pow 2 channel)
+(def z (<- channel))
+
+(println z)
+
+
