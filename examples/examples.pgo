@@ -1,4 +1,4 @@
-;; a tour of all functions in pocket go
+;; a tour of all functions/primitives in pocket go
 
 (def x 1) ;; var definition
 
@@ -15,15 +15,25 @@
 
 (answer_to_life)
 
-(defn higher_fun (x) ;; higher order functions, with js like closures
-    (defn (y) (* x y))
+(defn higher_fun (x) 
+    (defn (y) (* x y)) ;; higher order functions, with js like closures
 )
 
-((higher_fun 3) 3)
+((higher_fun 8) 9) ;; returns 72
 
-(set x 3) ;; set the var x to 3
+(set x 4) ;; set the var x to 3
 
-(println x) ;; prints 3
+(println x) ;; prints 4
+
+;; logic
+(def i 3)
+(for i          ;; 0 evaluates to false, o.w. true!
+    (println i)
+    (set i (- i 1))
+)
+
+(if (= i 0) (println 9001)) ;; value compairison op
+(if i (println -1))
 
 ;; goroutines!
 (defn two () 
@@ -31,7 +41,7 @@
 )
 
 (go two)
-(sleep 750) ;; sleeps for 100ms
+(sleep 750) ;; sleeps for 750ms
 
 ;; channels
 

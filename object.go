@@ -39,7 +39,6 @@ type Func struct {
 
 var nilObj = &Object{objT: nilT}
 var closeParenObj = &Object{objT: closePT}
-var trueObj = &Object{objT: trueT}
 
 func prints(os []Object) {
 	for _, op := range os {

@@ -5,17 +5,31 @@ import "time"
 type PrimFunc = func(args []*Object, env *Env) *Object
 
 var Functs = map[string]PrimFunc{
-	"+":       add,
-	"-":       minus,
-	"/":       divide,
-	"*":       multi,
-	"println": printLn,
-	"def":     def,
-	"defn":    defn,
-	"go":      goRoutine,
-	"<-":      channelOp,
+	// arithmetic funcs
+	"+": add,
+	"-": minus,
+	"/": divide,
+	"*": multi,
+
+	// variable funcs
+	"def":  def,
+	"defn": defn,
+	"set":  set,
+
+	// goruotine funcs
+	"go": goRoutine,
+	"<-": channelOp,
+
+	// logic funcs
+	"for": forloop,
+	"if":  ifcond,
+	"=":   equalval,
+	"eq":  equalref,
+	">":   cmp,
+
+	// misc. funcs
 	"sleep":   sleep,
-	"set":     set,
+	"println": printLn,
 }
 
 func isStartOfFunc(r rune) bool {
@@ -157,4 +171,96 @@ func channelOp(args []*Object, env *Env) *Object {
 	} else {
 		panic("invalid call to channel op")
 	}
+}
+
+// (for $expr ?$expr...)
+func forloop(args []*Object, env *Env) *Object {
+	num := Eval(Car(args), env)
+	if len(args) <= 1 || num.Type() != numT {
+		panic("for loop must have a num in the first args")
+	}
+	for ; num.Type() == numT && num.Num() != 0; num = Eval(Car(args), env) {
+		EvalList(Cdr(args), env)
+	}
+	return nilObj
+}
+
+// (if $expr ?$expr...)
+func ifcond(args []*Object, env *Env) *Object {
+	num := Eval(Car(args), env)
+	if len(args) <= 1 || num.Type() != numT {
+		panic("for loop must have a num in the first args")
+	}
+	if num.Num() != 0 {
+		EvalList(Cdr(args), env)
+	}
+	return nilObj
+}
+
+// (= expr...)
+func eq(args []*Object, env *Env) *Object {
+	if len(args) == 0 {
+		panic("must have values/exprs in call to '=' function")
+	}
+	evalargs := EvalList(args, env)
+	car := Car(evalargs)
+	if car.Type() != numT {
+		return Num(0)
+	}
+	num := car.Num()
+	for i := 1; i < len(evalargs); i++ {
+		if evalargs[i].Type() != numT || evalargs[i].Num() != num {
+			return Num(0)
+		}
+	}
+	return Num(1)
+}
+
+// (= expr...)
+func equalval(args []*Object, env *Env) *Object {
+	if len(args) == 0 {
+		panic("must have values/exprs in call to '=' function")
+	}
+	evalargs := EvalList(args, env)
+	car := Car(evalargs)
+	if car.Type() != numT {
+		return Num(0)
+	}
+	num := car.Num()
+	for i := 1; i < len(evalargs); i++ {
+		if evalargs[i].Type() != numT || evalargs[i].Num() != num {
+			return Num(0)
+		}
+	}
+	return Num(1)
+}
+
+// (eq $expr...)
+func equalref(args []*Object, env *Env) *Object {
+	if len(args) == 0 {
+		panic("must have values/exprs in call to '=' function")
+	}
+	evalargs := EvalList(args, env)
+	car := Car(evalargs)
+	for i := 1; i < len(evalargs); i++ {
+		if evalargs[i] != car {
+			return Num(0)
+		}
+	}
+	return Num(1)
+}
+
+// (> $expr $expr)
+func cmp(args []*Object, env *Env) *Object {
+	if len(args) != 2 {
+		panic("invalid args count passed to cmp")
+	}
+	evalargs := EvalList(args, env)
+	if evalargs[0].Type() != numT || evalargs[1].Type() != numT {
+		return Num(0)
+	}
+	if evalargs[0].Num() > evalargs[1].Num() {
+		return Num(1)
+	}
+	return Num(0)
 }
