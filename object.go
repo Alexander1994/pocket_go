@@ -43,27 +43,28 @@ var closeParenObj = &Object{objT: closePT}
 func prints(os []Object) {
 	for _, op := range os {
 		op.print()
+		print(" ")
 	}
 }
 
 func (o *Object) print() {
 	switch o.objT {
 	case primitveT, symbolT:
-		fmt.Printf("%s ", o.Symbol())
+		fmt.Printf("%s", o.Symbol())
 	case funcT:
 		o.value.(*Func).args.print()
 	case closePT:
-		fmt.Print(") ")
+		fmt.Print(")")
 	case nilT:
-		fmt.Printf("nil ")
+		fmt.Printf("nil")
 	case numT:
-		fmt.Printf("%.2f ", o.Num())
+		fmt.Printf("%.2f", o.Num())
 	case chanT:
-		fmt.Printf("chan ")
+		fmt.Printf("chan")
 	case cellT:
-		fmt.Print("\n")
 		for _, no := range o.List() {
 			no.print()
+			print(" ")
 		}
 	default:
 		panic("invalid type found: " + o.TypeStr())

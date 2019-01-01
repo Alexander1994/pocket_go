@@ -16,10 +16,6 @@ var Functs = map[string]PrimFunc{
 	"defn": defn,
 	"set":  set,
 
-	// goruotine funcs
-	"go": goRoutine,
-	"<-": channelOp,
-
 	// logic funcs
 	"for": forloop,
 	"if":  ifcond,
@@ -27,9 +23,18 @@ var Functs = map[string]PrimFunc{
 	"eq":  equalref,
 	">":   cmp,
 
+	// goruotine funcs
+	"go": goroutine,
+	"<-": channelop,
+
+	// go flavored lisps
+	"quote": quote,
+	"[]":    subscript,
+	"[:]":   sublist,
+
 	// misc. funcs
 	"sleep":   sleep,
-	"println": printLn,
+	"println": printn,
 }
 
 func isStartOfFunc(r rune) bool {
@@ -74,7 +79,7 @@ func multi(args []*Object, env *Env) *Object {
 	}
 	return Num(sum)
 }
-func printLn(args []*Object, env *Env) *Object {
+func printn(args []*Object, env *Env) *Object {
 	args = EvalList(args, env)
 	for _, arg := range args {
 		arg.print()
@@ -149,7 +154,7 @@ func (o *Object) CallFunc(args []*Object, env *Env) (returnVal *Object) {
 }
 
 // (go $symbol ?$expr...)
-func goRoutine(args []*Object, env *Env) *Object {
+func goroutine(args []*Object, env *Env) *Object {
 	if len(args) < 1 {
 		panic("go primitive requires a function and its args")
 	}
@@ -162,7 +167,7 @@ func goRoutine(args []*Object, env *Env) *Object {
 }
 
 // send: (<- $channel $expr) OR recv: (<- $channel)
-func channelOp(args []*Object, env *Env) *Object {
+func channelop(args []*Object, env *Env) *Object {
 	if len(args) == 2 { // send
 		Eval(Car(args), env).Send(Eval(args[1], env))
 		return nilObj
@@ -195,25 +200,6 @@ func ifcond(args []*Object, env *Env) *Object {
 		EvalList(Cdr(args), env)
 	}
 	return nilObj
-}
-
-// (= expr...)
-func eq(args []*Object, env *Env) *Object {
-	if len(args) == 0 {
-		panic("must have values/exprs in call to '=' function")
-	}
-	evalargs := EvalList(args, env)
-	car := Car(evalargs)
-	if car.Type() != numT {
-		return Num(0)
-	}
-	num := car.Num()
-	for i := 1; i < len(evalargs); i++ {
-		if evalargs[i].Type() != numT || evalargs[i].Num() != num {
-			return Num(0)
-		}
-	}
-	return Num(1)
 }
 
 // (= expr...)
@@ -263,4 +249,36 @@ func cmp(args []*Object, env *Env) *Object {
 		return Num(1)
 	}
 	return Num(0)
+}
+
+// '$expr
+func quote(args []*Object, env *Env) *Object {
+	if len(args) != 1 {
+		panic("invalid arg count passed to quote")
+	}
+	return Car(args)
+}
+
+// ([] $expr $expr) $1 evals to num, $2 evals to list
+func subscript(args []*Object, env *Env) *Object {
+	if len(args) != 2 {
+		panic("invalid arg count passed to subscript")
+	}
+	numObj := Eval(args[0], env)
+	listObj := Eval(args[1], env)
+	if numObj.Type() != numT || listObj.Type() != cellT {
+		panic("invalid types passed to subscript op")
+	}
+	return listObj.List()[uint(numObj.Num())]
+}
+
+// ([:] $expr $expr $expr) $1 evals to num, $2 evals to num, $3 evals to list
+func sublist(args []*Object, env *Env) *Object {
+	if len(args) != 3 {
+		panic("invalid arg count passed to sublist")
+	}
+	upperindex := Eval(args[0], env)
+	lowerindex := Eval(args[1], env)
+	listObj := Eval(args[2], env)
+	return List(listObj.List()[uint(lowerindex.Num()):uint(upperindex.Num())])
 }

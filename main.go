@@ -16,7 +16,7 @@ func Run(fname string) {
 	var obj *Object
 	env := createEnv()
 	for {
-		obj = readExpr()
+		obj = parseExpr()
 		if obj == nilObj {
 			break
 		}

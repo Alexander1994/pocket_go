@@ -1,5 +1,7 @@
-;; a tour of all functions/primitives in pocket go
+   ;; A Tour of Pocket Go ;;
 
+
+;; functions/primitives
 (def x 1) ;; var definition
 
 (+ 1 1) ;; arithmetic so far +, *, /, -
@@ -21,7 +23,7 @@
 
 ((higher_fun 8) 9) ;; returns 72
 
-(set x 4) ;; set the var x to 3
+(set x 5) ;; set the var x to 4
 
 (println x) ;; prints 4
 
@@ -29,11 +31,24 @@
 (def i 3)
 (for i          ;; 0 evaluates to false, o.w. true!
     (println i)
-    (set i (- i 1))
+    (set i (- i 1)) ;; sets value in i
 )
 
 (if (= i 0) (println 9001)) ;; value compairison op
 (if i (println -1))
+
+(def j x)
+(if (eq j x) (println 1)) ;; ref compairison op
+(if (> j i) (println 2)) ;; num compairison
+
+(println '(hello world)) ;; sudo strings with quote primitive
+
+(set i 1)
+
+;; list ops
+([] i '((happy halloween) (happy new year))) ;; indexing list literals
+([:] j i '(lisp welcome to pocket go lists fists)) ;; sublist op
+
 
 ;; goroutines!
 (defn two () 
@@ -47,11 +62,11 @@
 
 (def channel chan)
 (defn pow (x ch)
-    (<- ch (* x x) )
+    (<- ch (* x x) ) ;; send to channel
 )
 
 (go pow 2 channel)
-(def z (<- channel))
+(def z (<- channel)) ;; receive from channel
 
 (println z)
 
