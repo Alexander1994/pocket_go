@@ -7,7 +7,7 @@
 - Go routines (DONE)
 - Channels    (DONE)
 - Closures    (DONE)
-- Macros
+- Macros      (DONE)
 
 ** see: examples/examples.pgo for a complete tour of the language
 

@@ -11,7 +11,7 @@ var Functs = map[string]PrimFunc{
 	"/": divide,
 	"*": multi,
 
-	// variable funcs
+	// variable funcs / mutates environments
 	"def":  def,
 	"defn": defn,
 	"set":  set,
@@ -35,6 +35,9 @@ var Functs = map[string]PrimFunc{
 	// misc. funcs
 	"sleep":   sleep,
 	"println": printn,
+
+	// macro funcs
+	"macro": macro,
 }
 
 func isStartOfFunc(r rune) bool {
@@ -79,11 +82,14 @@ func multi(args []*Object, env *Env) *Object {
 	}
 	return Num(sum)
 }
+
 func printn(args []*Object, env *Env) *Object {
 	args = EvalList(args, env)
-	for _, arg := range args {
+	for i, arg := range args {
 		arg.print()
-		print(" ")
+		if i != len(args)-1 {
+			print(" ")
+		}
 	}
 	println()
 	return nilObj
@@ -129,6 +135,7 @@ func defn(args []*Object, env *Env) *Object {
 	if len(args) == 1 {
 		panic("defn must have atleast 2 or more args: (defn ?$symbol ($symbol...) $expr...)")
 	}
+
 	var closure *Env
 	if env.isTempEnv() {
 		closure = env
@@ -138,6 +145,35 @@ func defn(args []*Object, env *Env) *Object {
 	}
 	env.Add(Car(args).Symbol(), Function(args[1], closure, args[2:]))
 	return nilObj
+}
+
+// (macro $symbol ($args...) $expr...)
+func macro(args []*Object, env *Env) *Object {
+	arglist := args[1].List()
+	tempateargs := make([][]*Object, len(arglist))
+	arrayindex := make(map[string]int)
+	exprs := args[2:]
+	for i, arg := range arglist {
+		arrayindex[arg.Symbol()] = i
+		tempateargs[i] = make([]*Object, 0)
+	}
+	for _, expr := range exprs {
+		cacheMacro(expr, arrayindex, tempateargs)
+	}
+	env.Add(Car(args).Symbol(), Macro(tempateargs, exprs))
+	return nilObj
+}
+
+func cacheMacro(obj *Object, arrayindex map[string]int, tempateargs [][]*Object) {
+	if obj.Type() == symbolT {
+		if ind, ok := arrayindex[obj.Symbol()]; ok {
+			tempateargs[ind] = append(tempateargs[ind], obj)
+		}
+	} else if obj.Type() == cellT {
+		for _, objIt := range obj.List() {
+			cacheMacro(objIt, arrayindex, tempateargs)
+		}
+	}
 }
 
 // ($symbol ?$expr...)
@@ -152,6 +188,37 @@ func (o *Object) CallFunc(args []*Object, env *Env) (returnVal *Object) {
 	currEnv.popFuncEnv()
 	return resultList[len(resultList)-1]
 }
+
+/*
+(macro plus1 (x) (set x (+ x 1)) )
+(def y 0)
+(plus1 y)
+*/
+// ($symbol ?$expr...)
+func (o *Object) RunMacro(args []*Object, env *Env) (result *Object) {
+	// setup
+	macro := o.Macro()
+	for i, arg := range args {
+		for _, templ := range macro.templateargs[i] {
+			(*templ) = *arg
+		}
+	}
+	// run
+	return EvalList(macro.expr, env)[len(macro.expr)-1]
+}
+
+// func expand(obj *Object, env *Env) {
+// 	if obj.Type() == symbolT {
+// 		evalobj, _ := env.find(obj.Symbol())
+// 		if evalobj != nilObj {
+// 			*obj = *Eval(evalobj, env)
+// 		}
+// 	} else if obj.Type() == cellT {
+// 		for _, lobj := range obj.List() {
+// 			expand(lobj, env)
+// 		}
+// 	}
+// }
 
 // (go $symbol ?$expr...)
 func goroutine(args []*Object, env *Env) *Object {

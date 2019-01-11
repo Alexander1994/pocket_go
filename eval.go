@@ -13,9 +13,6 @@ func Eval(o *Object, env *Env) *Object {
 	case cellT:
 		function := Eval(o.Car(), env)
 		args := o.Cdr()
-		if function.Type() != primitveT && function.Type() != funcT {
-			panic("Head of cell/list is not a function: ")
-		}
 		return call(function, args, env)
 	}
 	return nilObj
@@ -31,11 +28,13 @@ func EvalList(list []*Object, env *Env) []*Object {
 }
 
 func call(function *Object, args []*Object, env *Env) *Object {
-	if function.Type() == primitveT {
+	switch function.Type() {
+	case primitveT:
 		return function.CallPrim(args, env)
-	}
-	if function.Type() == funcT {
+	case funcT:
 		return function.CallFunc(args, env)
+	case macroT:
+		return function.RunMacro(args, env)
 	}
-	panic("invalid call to func")
+	panic("Head of cell/list is not a function: ")
 }

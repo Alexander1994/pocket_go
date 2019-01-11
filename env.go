@@ -8,20 +8,17 @@ type Env struct {
 func (e *Env) dump() {
 	it := e
 	for {
-		for name, v := range e.vars {
+		for name, v := range it.vars {
 			print(name + " = ")
 			v.print()
-			println()
+			print(" ")
 		}
+		println()
 		if it.upperEnv == nil {
 			break
 		}
 		it = it.upperEnv
 	}
-}
-
-func createEnv() (e *Env) {
-	return &Env{vars: make(map[string]*Object), upperEnv: nil}
 }
 
 func (env *Env) find(symbol string) (obj *Object, objEnv *Env) {
@@ -58,17 +55,20 @@ func AddAndGetNewEnv(e *Env) (eNew *Env) {
 	return eNew
 }
 
+func createEnv() (e *Env) {
+	return &Env{vars: make(map[string]*Object), upperEnv: nil}
+}
+
 func (e *Env) popFuncEnv() {
 	e = e.upperEnv
 }
 
 func (e *Env) isTempEnv() bool {
-	return e.upperEnv != nil // && e.upperEnv.upperEnv != nil
+	return e.upperEnv != nil
 }
 
 func (o *Object) pushFuncEnv(args []*Object, env *Env) (newEnv *Env) {
-	funcDef := o.Function()
-	defArgs := funcDef.args.List()
+	defArgs := o.Function().args.List()
 	if len(defArgs) != len(args) {
 		panic("args in call to function != function args")
 	}

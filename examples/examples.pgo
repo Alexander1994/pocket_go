@@ -13,7 +13,7 @@
 (def answer_to_life 
     (defn ()           ;; anon functions
         42
-    )) 
+    ) ) 
 
 (answer_to_life)
 
@@ -23,9 +23,9 @@
 
 ((higher_fun 8) 9) ;; returns 72
 
-(set x 5) ;; set the var x to 4
+(set x 5) ;; set the var x to 5
 
-(println x) ;; prints 4
+(println x) ;; prints 5
 
 ;; logic
 (def i 3)

@@ -9,15 +9,13 @@ type varT int
 
 const (
 	nilT varT = iota
-	trueT
 	closePT
 	numT
 	cellT
 	symbolT
+	chanT
 	primitveT
 	funcT
-	chanT
-	// not in use
 	macroT
 )
 
@@ -37,10 +35,15 @@ type Func struct {
 	expr    []*Object // $expr...
 }
 
+type MacroFn struct {
+	expr         []*Object
+	templateargs [][]*Object // argindex => array of references to arg in code
+}
+
 var nilObj = &Object{objT: nilT}
 var closeParenObj = &Object{objT: closePT}
 
-func prints(os []Object) {
+func prints(os []*Object) {
 	for _, op := range os {
 		op.print()
 		print(" ")
@@ -52,7 +55,10 @@ func (o *Object) print() {
 	case primitveT, symbolT:
 		fmt.Printf("%s", o.Symbol())
 	case funcT:
+		print("(")
 		o.value.(*Func).args.print()
+		print(")")
+		prints(o.value.(*Func).expr)
 	case closePT:
 		fmt.Print(")")
 	case nilT:
@@ -61,11 +67,18 @@ func (o *Object) print() {
 		fmt.Printf("%.2f", o.Num())
 	case chanT:
 		fmt.Printf("chan")
+	case macroT:
+		fmt.Printf("macrofn")
+
 	case cellT:
-		for _, no := range o.List() {
+		print("(")
+		for i, no := range o.List() {
 			no.print()
-			print(" ")
+			if i != len(o.List())-1 {
+				print(" ")
+			}
 		}
+		print(")")
 	default:
 		panic("invalid type found: " + o.TypeStr())
 	}
@@ -81,6 +94,10 @@ func (o *Object) TypeStr() string {
 
 func (o *Object) List() []*Object {
 	return o.value.([]*Object)
+}
+
+func (o *Object) Set(i int, newO *Object) {
+	o.value.([]*Object)[i] = newO
 }
 
 func (o *Object) Car() *Object {
@@ -110,6 +127,10 @@ func (o *Object) Symbol() string {
 		return o.value.(string)
 	}
 	panic("no symbol found")
+}
+
+func (o *Object) Macro() *MacroFn {
+	return o.value.(*MacroFn)
 }
 
 func (o *Object) Function() *Func {
@@ -148,6 +169,10 @@ func Symbol(name string) *Object {
 
 func Function(args *Object, closure *Env, expr []*Object) *Object {
 	return &Object{objT: funcT, value: &Func{args: args, closure: closure, expr: expr}}
+}
+
+func Macro(tempateargs [][]*Object, expr []*Object) *Object {
+	return &Object{objT: macroT, value: &MacroFn{expr, tempateargs}}
 }
 
 func Channel() *Object {
