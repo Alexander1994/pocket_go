@@ -5,9 +5,9 @@ import (
 	"unicode"
 )
 
-func parseExpr() (obj *Object) {
+func ParseExpr() (obj *Object) {
 	for {
-		c, isEOF := NextRune()
+		c, isEOF := reader.NextRune()
 		if isEOF {
 			return nilObj
 		}
@@ -15,20 +15,20 @@ func parseExpr() (obj *Object) {
 			continue
 		}
 		if c == '\'' {
-			return parseQuote(c)
+			return ParseQuote(c)
 		}
-		if c == ';' && Peek() == ';' {
-			for ; c != '\n' && !isEOF; c, isEOF = NextRune() {
+		if c == ';' && reader.Peek() == ';' {
+			for ; c != '\n' && !isEOF; c, isEOF = reader.NextRune() {
 			}
 		}
-		if unicode.IsLetter(c) || isStartOfFunc(c) {
-			return parsePhrase(c)
+		if unicode.IsLetter(c) || IsStartOfFunc(c) {
+			return ParsePhrase(c)
 		}
-		if unicode.IsDigit(c) || (c == '-' && unicode.IsDigit(Peek())) {
-			return parseNum(c)
+		if unicode.IsDigit(c) || (c == '-' && unicode.IsDigit(reader.Peek())) {
+			return ParseNum(c)
 		}
 		if c == '(' {
-			return parseList()
+			return ParseList()
 		}
 		if c == ')' {
 			return closeParenObj
@@ -36,13 +36,13 @@ func parseExpr() (obj *Object) {
 	}
 }
 
-func parseQuote(r rune) *Object {
-	list := []*Object{Primitve("quote"), parseExpr()}
+func ParseQuote(r rune) *Object {
+	list := []*Object{Primitve("quote"), ParseExpr()}
 	return List(list)
 }
 
-func parseNum(r rune) *Object {
-	atom := parseAtom(r)
+func ParseNum(r rune) *Object {
+	atom := ParseAtom(r)
 	f, err := strconv.ParseFloat(atom, 32)
 	if err != nil {
 		panic("invalid num in parsing")
@@ -50,8 +50,8 @@ func parseNum(r rune) *Object {
 	return Num(float32(f))
 }
 
-func parsePhrase(r rune) *Object {
-	atom := parseAtom(r)
+func ParsePhrase(r rune) *Object {
+	atom := ParseAtom(r)
 	if atom == "chan" {
 		return Channel()
 	}
@@ -61,10 +61,10 @@ func parsePhrase(r rune) *Object {
 	return Symbol(atom)
 }
 
-func parseList() *Object {
+func ParseList() *Object {
 	evalList := make([]*Object, 0)
 	for {
-		obj := parseExpr()
+		obj := ParseExpr()
 		if obj == closeParenObj {
 			return List(evalList)
 		}
@@ -72,15 +72,15 @@ func parseList() *Object {
 	}
 }
 
-func parseAtom(r rune) string {
-	start := i
+func ParseAtom(r rune) string {
+	start := reader.index
 	end := 0
 	for {
-		c := Peek()
+		c := reader.Peek()
 		if unicode.IsSpace(c) || c == '(' || c == ')' {
-			return string(r) + SubBuffer(start, end)
+			return string(r) + reader.SubBuffer(start, end)
 		}
 		end++
-		NextRune()
+		reader.NextRune()
 	}
 }

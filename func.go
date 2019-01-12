@@ -6,41 +6,41 @@ type PrimFunc = func(args []*Object, env *Env) *Object
 
 var Functs = map[string]PrimFunc{
 	// arithmetic funcs
-	"+": add,
-	"-": minus,
-	"/": divide,
-	"*": multi,
+	"+": Add,
+	"-": Minus,
+	"/": Divide,
+	"*": Multi,
 
 	// variable funcs / mutates environments
-	"def":  def,
-	"defn": defn,
-	"set":  set,
+	"def":  Def,
+	"defn": Defn,
+	"set":  Set,
 
 	// logic funcs
-	"for": forloop,
-	"if":  ifcond,
-	"=":   equalval,
-	"eq":  equalref,
-	">":   cmp,
+	"for": ForLoop,
+	"if":  IfCond,
+	"=":   EqualVal,
+	"eq":  EqualRef,
+	">":   Cmp,
 
 	// goruotine funcs
-	"go": goroutine,
-	"<-": channelop,
+	"go": GoRoutine,
+	"<-": ChannelOp,
 
 	// go flavored lisps
-	"quote": quote,
-	"[]":    subscript,
-	"[:]":   sublist,
+	"quote": Quote,
+	"[]":    Subscript,
+	"[:]":   Sublist,
 
 	// misc. funcs
-	"sleep":   sleep,
-	"println": printn,
+	"sleep":   Sleep,
+	"println": Printn,
 
 	// macro funcs
-	"macro": macro,
+	"macro": DefMacro,
 }
 
-func isStartOfFunc(r rune) bool {
+func IsStartOfFunc(r rune) bool {
 	for name := range Functs {
 		if rune(name[0]) == r {
 			return true
@@ -49,7 +49,7 @@ func isStartOfFunc(r rune) bool {
 	return false
 }
 
-func add(args []*Object, env *Env) *Object {
+func Add(args []*Object, env *Env) *Object {
 	args = EvalList(args, env)
 	sum := float32(0)
 	for _, arg := range args {
@@ -57,7 +57,7 @@ func add(args []*Object, env *Env) *Object {
 	}
 	return Num(sum)
 }
-func minus(args []*Object, env *Env) *Object {
+func Minus(args []*Object, env *Env) *Object {
 	args = EvalList(args, env)
 	diff := Car(args).Num()
 
@@ -66,7 +66,7 @@ func minus(args []*Object, env *Env) *Object {
 	}
 	return Num(diff)
 }
-func divide(args []*Object, env *Env) *Object {
+func Divide(args []*Object, env *Env) *Object {
 	args = EvalList(args, env)
 	num := Car(args).Num()
 	for _, arg := range Cdr(args) {
@@ -74,7 +74,7 @@ func divide(args []*Object, env *Env) *Object {
 	}
 	return Num(num)
 }
-func multi(args []*Object, env *Env) *Object {
+func Multi(args []*Object, env *Env) *Object {
 	args = EvalList(args, env)
 	sum := Car(args).Num()
 	for _, arg := range Cdr(args) {
@@ -83,10 +83,10 @@ func multi(args []*Object, env *Env) *Object {
 	return Num(sum)
 }
 
-func printn(args []*Object, env *Env) *Object {
+func Printn(args []*Object, env *Env) *Object {
 	args = EvalList(args, env)
 	for i, arg := range args {
-		arg.print()
+		arg.Print()
 		if i != len(args)-1 {
 			print(" ")
 		}
@@ -96,12 +96,12 @@ func printn(args []*Object, env *Env) *Object {
 }
 
 // (sleep $num)
-func sleep(args []*Object, env *Env) *Object {
+func Sleep(args []*Object, env *Env) *Object {
 	if len(args) != 1 {
 		panic("sleep gets 1 arg which is a num")
 	}
 	num := Eval(Car(args), env)
-	if num.Type() != numT {
+	if num.Type() != NumT {
 		panic("sleep gets 1 arg which is a num")
 	}
 	length := time.Duration(num.Num()) * time.Millisecond
@@ -110,7 +110,7 @@ func sleep(args []*Object, env *Env) *Object {
 }
 
 // (def $symbol $expr)
-func def(args []*Object, env *Env) *Object {
+func Def(args []*Object, env *Env) *Object {
 	if len(args) != 2 {
 		panic("invalid args length passed to def")
 	}
@@ -121,7 +121,7 @@ func def(args []*Object, env *Env) *Object {
 }
 
 // (set $symbol $expr)
-func set(args []*Object, env *Env) *Object {
+func Set(args []*Object, env *Env) *Object {
 	if len(args) != 2 {
 		panic("invalid arg count in pass to set")
 	}
@@ -131,13 +131,13 @@ func set(args []*Object, env *Env) *Object {
 }
 
 // (defn ?$symbol ($symbol...) $expr...)
-func defn(args []*Object, env *Env) *Object {
+func Defn(args []*Object, env *Env) *Object {
 	if len(args) == 1 {
 		panic("defn must have atleast 2 or more args: (defn ?$symbol ($symbol...) $expr...)")
 	}
 
 	var closure *Env
-	if env.isTempEnv() {
+	if env.IsTempEnv() {
 		closure = env
 	}
 	if len(args) == 2 {
@@ -148,7 +148,7 @@ func defn(args []*Object, env *Env) *Object {
 }
 
 // (macro $symbol ($args...) $expr...)
-func macro(args []*Object, env *Env) *Object {
+func DefMacro(args []*Object, env *Env) *Object {
 	arglist := args[1].List()
 	tempateargs := make([][]*Object, len(arglist))
 	arrayindex := make(map[string]int)
@@ -158,20 +158,20 @@ func macro(args []*Object, env *Env) *Object {
 		tempateargs[i] = make([]*Object, 0)
 	}
 	for _, expr := range exprs {
-		cacheMacro(expr, arrayindex, tempateargs)
+		CacheMacro(expr, arrayindex, tempateargs)
 	}
 	env.Add(Car(args).Symbol(), Macro(tempateargs, exprs))
 	return nilObj
 }
 
-func cacheMacro(obj *Object, arrayindex map[string]int, tempateargs [][]*Object) {
-	if obj.Type() == symbolT {
+func CacheMacro(obj *Object, arrayindex map[string]int, tempateargs [][]*Object) {
+	if obj.Type() == SymbolT {
 		if ind, ok := arrayindex[obj.Symbol()]; ok {
 			tempateargs[ind] = append(tempateargs[ind], obj)
 		}
-	} else if obj.Type() == cellT {
+	} else if obj.Type() == CellT {
 		for _, objIt := range obj.List() {
-			cacheMacro(objIt, arrayindex, tempateargs)
+			CacheMacro(objIt, arrayindex, tempateargs)
 		}
 	}
 }
@@ -183,17 +183,12 @@ func (o *Object) CallFunc(args []*Object, env *Env) (returnVal *Object) {
 	if function.closure != nil {
 		currEnv = function.closure
 	}
-	newEnv := o.pushFuncEnv(args, currEnv)
+	newEnv := o.PushFuncEnv(args, currEnv)
 	resultList := EvalList(function.expr, newEnv)
-	currEnv.popFuncEnv()
+	currEnv.PopFuncEnv()
 	return resultList[len(resultList)-1]
 }
 
-/*
-(macro plus1 (x) (set x (+ x 1)) )
-(def y 0)
-(plus1 y)
-*/
 // ($symbol ?$expr...)
 func (o *Object) RunMacro(args []*Object, env *Env) (result *Object) {
 	// setup
@@ -207,26 +202,13 @@ func (o *Object) RunMacro(args []*Object, env *Env) (result *Object) {
 	return EvalList(macro.expr, env)[len(macro.expr)-1]
 }
 
-// func expand(obj *Object, env *Env) {
-// 	if obj.Type() == symbolT {
-// 		evalobj, _ := env.find(obj.Symbol())
-// 		if evalobj != nilObj {
-// 			*obj = *Eval(evalobj, env)
-// 		}
-// 	} else if obj.Type() == cellT {
-// 		for _, lobj := range obj.List() {
-// 			expand(lobj, env)
-// 		}
-// 	}
-// }
-
 // (go $symbol ?$expr...)
-func goroutine(args []*Object, env *Env) *Object {
+func GoRoutine(args []*Object, env *Env) *Object {
 	if len(args) < 1 {
 		panic("go primitive requires a function and its args")
 	}
 	function := Eval(args[0], env)
-	if function.Type() != funcT {
+	if function.Type() != FuncT {
 		panic("go primitive requires a function and its args")
 	}
 	go function.CallFunc(Cdr(args), env)
@@ -234,7 +216,7 @@ func goroutine(args []*Object, env *Env) *Object {
 }
 
 // send: (<- $channel $expr) OR recv: (<- $channel)
-func channelop(args []*Object, env *Env) *Object {
+func ChannelOp(args []*Object, env *Env) *Object {
 	if len(args) == 2 { // send
 		Eval(Car(args), env).Send(Eval(args[1], env))
 		return nilObj
@@ -246,21 +228,21 @@ func channelop(args []*Object, env *Env) *Object {
 }
 
 // (for $expr ?$expr...)
-func forloop(args []*Object, env *Env) *Object {
+func ForLoop(args []*Object, env *Env) *Object {
 	num := Eval(Car(args), env)
-	if len(args) <= 1 || num.Type() != numT {
+	if len(args) <= 1 || num.Type() != NumT {
 		panic("for loop must have a num in the first args")
 	}
-	for ; num.Type() == numT && num.Num() != 0; num = Eval(Car(args), env) {
+	for ; num.Type() == NumT && num.Num() != 0; num = Eval(Car(args), env) {
 		EvalList(Cdr(args), env)
 	}
 	return nilObj
 }
 
 // (if $expr ?$expr...)
-func ifcond(args []*Object, env *Env) *Object {
+func IfCond(args []*Object, env *Env) *Object {
 	num := Eval(Car(args), env)
-	if len(args) <= 1 || num.Type() != numT {
+	if len(args) <= 1 || num.Type() != NumT {
 		panic("for loop must have a num in the first args")
 	}
 	if num.Num() != 0 {
@@ -270,18 +252,18 @@ func ifcond(args []*Object, env *Env) *Object {
 }
 
 // (= expr...)
-func equalval(args []*Object, env *Env) *Object {
+func EqualVal(args []*Object, env *Env) *Object {
 	if len(args) == 0 {
 		panic("must have values/exprs in call to '=' function")
 	}
 	evalargs := EvalList(args, env)
 	car := Car(evalargs)
-	if car.Type() != numT {
+	if car.Type() != NumT {
 		return Num(0)
 	}
 	num := car.Num()
 	for i := 1; i < len(evalargs); i++ {
-		if evalargs[i].Type() != numT || evalargs[i].Num() != num {
+		if evalargs[i].Type() != NumT || evalargs[i].Num() != num {
 			return Num(0)
 		}
 	}
@@ -289,7 +271,7 @@ func equalval(args []*Object, env *Env) *Object {
 }
 
 // (eq $expr...)
-func equalref(args []*Object, env *Env) *Object {
+func EqualRef(args []*Object, env *Env) *Object {
 	if len(args) == 0 {
 		panic("must have values/exprs in call to '=' function")
 	}
@@ -304,12 +286,12 @@ func equalref(args []*Object, env *Env) *Object {
 }
 
 // (> $expr $expr)
-func cmp(args []*Object, env *Env) *Object {
+func Cmp(args []*Object, env *Env) *Object {
 	if len(args) != 2 {
 		panic("invalid args count passed to cmp")
 	}
 	evalargs := EvalList(args, env)
-	if evalargs[0].Type() != numT || evalargs[1].Type() != numT {
+	if evalargs[0].Type() != NumT || evalargs[1].Type() != NumT {
 		return Num(0)
 	}
 	if evalargs[0].Num() > evalargs[1].Num() {
@@ -319,7 +301,7 @@ func cmp(args []*Object, env *Env) *Object {
 }
 
 // '$expr
-func quote(args []*Object, env *Env) *Object {
+func Quote(args []*Object, env *Env) *Object {
 	if len(args) != 1 {
 		panic("invalid arg count passed to quote")
 	}
@@ -327,20 +309,20 @@ func quote(args []*Object, env *Env) *Object {
 }
 
 // ([] $expr $expr) $1 evals to num, $2 evals to list
-func subscript(args []*Object, env *Env) *Object {
+func Subscript(args []*Object, env *Env) *Object {
 	if len(args) != 2 {
 		panic("invalid arg count passed to subscript")
 	}
 	numObj := Eval(args[0], env)
 	listObj := Eval(args[1], env)
-	if numObj.Type() != numT || listObj.Type() != cellT {
+	if numObj.Type() != NumT || listObj.Type() != CellT {
 		panic("invalid types passed to subscript op")
 	}
 	return listObj.List()[uint(numObj.Num())]
 }
 
 // ([:] $expr $expr $expr) $1 evals to num, $2 evals to num, $3 evals to list
-func sublist(args []*Object, env *Env) *Object {
+func Sublist(args []*Object, env *Env) *Object {
 	if len(args) != 3 {
 		panic("invalid arg count passed to sublist")
 	}

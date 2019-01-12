@@ -8,15 +8,15 @@ import (
 type varT int
 
 const (
-	nilT varT = iota
-	closePT
-	numT
-	cellT
-	symbolT
-	chanT
-	primitveT
-	funcT
-	macroT
+	NilT varT = iota
+	ClosePT
+	NumT
+	CellT
+	SymbolT
+	ChanT
+	PrimitveT
+	FuncT
+	MacroT
 )
 
 type Prim struct {
@@ -36,44 +36,44 @@ type Func struct {
 }
 
 type MacroFn struct {
-	expr         []*Object
+	expr         []*Object   // $expr...
 	templateargs [][]*Object // argindex => array of references to arg in code
 }
 
-var nilObj = &Object{objT: nilT}
-var closeParenObj = &Object{objT: closePT}
+var nilObj = &Object{objT: NilT}
+var closeParenObj = &Object{objT: ClosePT}
 
-func prints(os []*Object) {
+func Prints(os []*Object) {
 	for _, op := range os {
-		op.print()
+		op.Print()
 		print(" ")
 	}
 }
 
-func (o *Object) print() {
+func (o *Object) Print() {
 	switch o.objT {
-	case primitveT, symbolT:
+	case PrimitveT, SymbolT:
 		fmt.Printf("%s", o.Symbol())
-	case funcT:
+	case FuncT:
 		print("(")
-		o.value.(*Func).args.print()
+		o.value.(*Func).args.Print()
 		print(")")
-		prints(o.value.(*Func).expr)
-	case closePT:
+		Prints(o.value.(*Func).expr)
+	case ClosePT:
 		fmt.Print(")")
-	case nilT:
+	case NilT:
 		fmt.Printf("nil")
-	case numT:
+	case NumT:
 		fmt.Printf("%.2f", o.Num())
-	case chanT:
+	case ChanT:
 		fmt.Printf("chan")
-	case macroT:
+	case MacroT:
 		fmt.Printf("macrofn")
 
-	case cellT:
+	case CellT:
 		print("(")
 		for i, no := range o.List() {
-			no.print()
+			no.Print()
 			if i != len(o.List())-1 {
 				print(" ")
 			}
@@ -121,9 +121,9 @@ func (o *Object) Num() float32 {
 }
 
 func (o *Object) Symbol() string {
-	if o.objT == primitveT {
+	if o.objT == PrimitveT {
 		return o.value.(*Prim).name
-	} else if o.objT == symbolT {
+	} else if o.objT == SymbolT {
 		return o.value.(string)
 	}
 	panic("no symbol found")
@@ -152,30 +152,30 @@ func (o *Object) Recv() (recv *Object) {
 
 // Create Objects
 func Num(n float32) *Object {
-	return &Object{objT: numT, value: n}
+	return &Object{objT: NumT, value: n}
 }
 
 func List(os []*Object) *Object {
-	return &Object{objT: cellT, value: os}
+	return &Object{objT: CellT, value: os}
 }
 
 func Primitve(name string) *Object {
-	return &Object{objT: primitveT, value: &Prim{method: Functs[name], name: name}}
+	return &Object{objT: PrimitveT, value: &Prim{method: Functs[name], name: name}}
 }
 
 func Symbol(name string) *Object {
-	return &Object{objT: symbolT, value: name}
+	return &Object{objT: SymbolT, value: name}
 }
 
 func Function(args *Object, closure *Env, expr []*Object) *Object {
-	return &Object{objT: funcT, value: &Func{args: args, closure: closure, expr: expr}}
+	return &Object{objT: FuncT, value: &Func{args: args, closure: closure, expr: expr}}
 }
 
 func Macro(tempateargs [][]*Object, expr []*Object) *Object {
-	return &Object{objT: macroT, value: &MacroFn{expr, tempateargs}}
+	return &Object{objT: MacroT, value: &MacroFn{expr, tempateargs}}
 }
 
 func Channel() *Object {
 	ch := make(chan *Object)
-	return &Object{objT: chanT, value: &ch}
+	return &Object{objT: ChanT, value: &ch}
 }

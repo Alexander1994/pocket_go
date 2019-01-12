@@ -12,11 +12,11 @@ func main() {
 }
 
 func Run(fname string) {
-	Load(fname)
+	reader.Load(fname)
 	var obj *Object
-	env := createEnv()
+	env := CreateEnv()
 	for {
-		obj = parseExpr()
+		obj = ParseExpr()
 		if obj == nilObj {
 			break
 		}
@@ -24,7 +24,7 @@ func Run(fname string) {
 			panic("extra paren hanging out")
 		}
 		obj = Eval(obj, env)
-		obj.print()
+		obj.Print()
 		println()
 	}
 }

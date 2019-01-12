@@ -2,18 +2,18 @@ package main
 
 func Eval(o *Object, env *Env) *Object {
 	switch o.objT {
-	case numT, primitveT, nilT, funcT, chanT:
+	case NumT, PrimitveT, NilT, FuncT, ChanT:
 		return o
-	case symbolT:
-		obj, _ := env.find(o.Symbol())
+	case SymbolT:
+		obj, _ := env.Find(o.Symbol())
 		if obj == nilObj {
 			panic("undefined symbol " + o.Symbol())
 		}
 		return obj
-	case cellT:
+	case CellT:
 		function := Eval(o.Car(), env)
 		args := o.Cdr()
-		return call(function, args, env)
+		return Call(function, args, env)
 	}
 	return nilObj
 }
@@ -27,13 +27,13 @@ func EvalList(list []*Object, env *Env) []*Object {
 	return evalList
 }
 
-func call(function *Object, args []*Object, env *Env) *Object {
+func Call(function *Object, args []*Object, env *Env) *Object {
 	switch function.Type() {
-	case primitveT:
+	case PrimitveT:
 		return function.CallPrim(args, env)
-	case funcT:
+	case FuncT:
 		return function.CallFunc(args, env)
-	case macroT:
+	case MacroT:
 		return function.RunMacro(args, env)
 	}
 	panic("Head of cell/list is not a function: ")

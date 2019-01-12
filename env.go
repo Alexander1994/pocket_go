@@ -10,7 +10,7 @@ func (e *Env) dump() {
 	for {
 		for name, v := range it.vars {
 			print(name + " = ")
-			v.print()
+			v.Print()
 			print(" ")
 		}
 		println()
@@ -21,7 +21,7 @@ func (e *Env) dump() {
 	}
 }
 
-func (env *Env) find(symbol string) (obj *Object, objEnv *Env) {
+func (env *Env) Find(symbol string) (obj *Object, objEnv *Env) {
 	var found bool
 	it := env
 	for {
@@ -41,7 +41,7 @@ func (e *Env) Add(symbol string, obj *Object) {
 }
 
 func (e *Env) Set(symbol string, obj *Object) {
-	currObj, env := e.find(symbol)
+	currObj, env := e.Find(symbol)
 	if currObj != nilObj {
 		env.Add(symbol, obj)
 		return
@@ -50,24 +50,24 @@ func (e *Env) Set(symbol string, obj *Object) {
 }
 
 func AddAndGetNewEnv(e *Env) (eNew *Env) {
-	eNew = createEnv()
+	eNew = CreateEnv()
 	eNew.upperEnv = e
 	return eNew
 }
 
-func createEnv() (e *Env) {
+func CreateEnv() (e *Env) {
 	return &Env{vars: make(map[string]*Object), upperEnv: nil}
 }
 
-func (e *Env) popFuncEnv() {
+func (e *Env) PopFuncEnv() {
 	e = e.upperEnv
 }
 
-func (e *Env) isTempEnv() bool {
+func (e *Env) IsTempEnv() bool {
 	return e.upperEnv != nil
 }
 
-func (o *Object) pushFuncEnv(args []*Object, env *Env) (newEnv *Env) {
+func (o *Object) PushFuncEnv(args []*Object, env *Env) (newEnv *Env) {
 	defArgs := o.Function().args.List()
 	if len(defArgs) != len(args) {
 		panic("args in call to function != function args")

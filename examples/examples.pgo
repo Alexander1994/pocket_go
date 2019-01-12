@@ -1,13 +1,14 @@
+
    ;; A Tour of Pocket Go ;;
 
 
 ;; functions/primitives
+
 (def x 1) ;; var definition
 
 (+ 1 1) ;; arithmetic so far +, *, /, -
 
 (defn x2 (x) (* x 2)) ;; functions, *note temporary scope defined in functions
-
 (x2 4) ;; call to functions
 
 (def answer_to_life 
@@ -20,14 +21,14 @@
 (defn higher_fun (x) 
     (defn (y) (* x y)) ;; higher order functions, with js like closures
 )
-
 ((higher_fun 8) 9) ;; returns 72
 
 (set x 5) ;; set the var x to 5
-
 (println x) ;; prints 5
 
+
 ;; logic
+
 (def i 3)
 (for i          ;; 0 evaluates to false, o.w. true!
     (println i)
@@ -45,12 +46,37 @@
 
 (set i 1)
 
+
 ;; list ops
+
 ([] i '((happy halloween) (happy new year))) ;; indexing list literals
 ([:] j i '(lisp welcome to pocket go lists fists)) ;; sublist op
 
 
+;; macros
+
+(macro inc (i) 
+    (println i)
+    (set i (+ i 1))
+    (println i)
+    (println '(inked!))
+) 
+
+(def y 0)
+(inc y)
+(inc y)
+(inc y)
+
+(macro ifnot (num expr)
+    (if (= num 0) expr)
+)
+
+(ifnot 1 (println '(macros are boring!) ) )
+(ifnot 0 (println '(macros are neat!) ) )
+
+
 ;; goroutines!
+
 (defn two () 
     (println 2)
 )
